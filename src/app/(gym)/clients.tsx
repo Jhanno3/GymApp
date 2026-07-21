@@ -231,6 +231,19 @@ export default function GymClientsScreen() {
                 {actionError && <Text style={styles.error}>{actionError}</Text>}
 
                 <Pressable
+                  style={styles.secondaryButton}
+                  onPress={() => {
+                    const client = selectedClient;
+                    closeModal();
+                    router.push({
+                      pathname: '/client-routine',
+                      params: { dni: String(client.DNI), name: `${client.Nombre} ${client.Apellido}` },
+                    });
+                  }}>
+                  <Text style={styles.secondaryButtonText}>Ver / editar rutina</Text>
+                </Pressable>
+
+                <Pressable
                   style={[styles.button, isRenewing && styles.buttonDisabled]}
                   onPress={handleRenew}
                   disabled={isRenewing || isRemoving}>
@@ -417,6 +430,20 @@ const styles = StyleSheet.create({
     color: '#F87171',
     fontSize: 14,
     textAlign: 'center',
+  },
+  secondaryButton: {
+    width: '100%',
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.text,
   },
   button: {
     width: '100%',

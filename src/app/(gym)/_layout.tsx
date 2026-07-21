@@ -12,6 +12,7 @@ const MENU_ITEMS: {
   href: Href;
 }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: 'grid-outline', href: '/dashboard' },
+  { key: 'routines', label: 'Rutinas', icon: 'barbell-outline', href: '/routines' },
   { key: 'profile', label: 'Perfil', icon: 'person-outline', href: '/gym-profile' },
 ];
 
