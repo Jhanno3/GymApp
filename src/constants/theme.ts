@@ -6,3 +6,9 @@ export const Colors = {
   textMuted: '#9B9BA5',
   primary: '#4F8EF7',
 };
+
+export const SubscriptionStatusColors = {
+  active: '#4ADE80',
+  expiring: '#FBBF24',
+  none: '#52525B',
+};

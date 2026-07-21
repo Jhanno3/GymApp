@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -59,11 +60,14 @@ export default function LoginScreen() {
     ]);
   }
 
-  function goHome() {
+  async function goToRoleHome(userId: string) {
+    const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
+    const destination = data?.role === 'admin' ? '/dashboard' : '/home';
+
     if (router.canDismiss()) {
       router.dismissAll();
     }
-    router.replace('/home');
+    router.replace(destination);
   }
 
   async function handleSubmit() {
@@ -72,7 +76,11 @@ export default function LoginScreen() {
     try {
       await signInWithIdentifier(identifier, password);
       await offerBiometricEnrollment();
-      goHome();
+
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        await goToRoleHome(data.session.user.id);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ocurrió un error inesperado.');
     } finally {
@@ -92,15 +100,15 @@ export default function LoginScreen() {
       return;
     }
 
-    goHome();
+    await goToRoleHome(data.session.user.id);
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={styles.container}>
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>GymApp</Text>
           <Text style={styles.subtitle}>Ingresá con tu DNI o mail</Text>
 
@@ -148,7 +156,7 @@ export default function LoginScreen() {
           <Pressable onPress={() => router.push('/register')}>
             <Text style={styles.link}>¿No tenés cuenta? Registrate</Text>
           </Pressable>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -163,7 +171,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
     gap: 24,
