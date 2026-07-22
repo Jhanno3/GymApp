@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ExerciseGroupList } from '@/components/exercise-group-list';
+import { YouTubePlayerModal } from '@/components/youtube-player-modal';
 import { Colors } from '@/constants/theme';
+import { useClientRoutines } from '@/hooks/use-client-routines';
+import { useSession } from '@/hooks/use-session';
 
 type ClassSession = {
   id: string;
@@ -22,6 +26,10 @@ function toDateKey(date: Date) {
 }
 
 export default function ClassesScreen() {
+  const { session } = useSession();
+  const { routines } = useClientRoutines(session?.user.id);
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+
   const days = useMemo(() => {
     const today = new Date();
     return Array.from({ length: DAYS_TO_SHOW }, (_, i) => {
@@ -32,8 +40,13 @@ export default function ClassesScreen() {
   }, []);
 
   const [selectedKey, setSelectedKey] = useState(() => toDateKey(days[0]));
+  const selectedDate = days.find((date) => toDateKey(date) === selectedKey) ?? days[0];
+  const selectedWeekday = selectedDate.getDay();
 
   const classesForSelectedDay = CLIENT_CLASSES.filter((item) => item.date === selectedKey);
+  const routinesForSelectedDay = routines.filter((routine) =>
+    routine.diasSemana.includes(selectedWeekday)
+  );
 
   return (
     <View style={styles.container}>
@@ -63,10 +76,26 @@ export default function ClassesScreen() {
         data={classesForSelectedDay}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          routinesForSelectedDay.length > 0 ? (
+            <View style={styles.routinesForDay}>
+              {routinesForSelectedDay.map((routine, index) => (
+                <View key={`${routine.nombre}-${index}`} style={styles.routineSection}>
+                  <Text style={styles.routineTitle}>{routine.nombre}</Text>
+                  <ExerciseGroupList groups={routine.groups} onPressVideo={setActiveVideoId} />
+                </View>
+              ))}
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No tenés clases programadas este día.</Text>
-          </View>
+          routinesForSelectedDay.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                No tenés clases ni rutina programadas este día.
+              </Text>
+            </View>
+          ) : null
         }
         renderItem={({ item }) => (
           <View style={styles.classCard}>
@@ -78,6 +107,8 @@ export default function ClassesScreen() {
           </View>
         )}
       />
+
+      <YouTubePlayerModal videoId={activeVideoId} onClose={() => setActiveVideoId(null)} />
     </View>
   );
 }
@@ -131,6 +162,18 @@ const styles = StyleSheet.create({
   listContent: {
     flexGrow: 1,
     gap: 12,
+  },
+  routinesForDay: {
+    marginBottom: 8,
+  },
+  routineSection: {
+    marginBottom: 20,
+  },
+  routineTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 12,
   },
   emptyState: {
     flex: 1,
