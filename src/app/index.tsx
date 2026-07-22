@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PasswordInput } from '@/components/password-input';
 import { Colors } from '@/constants/theme';
 import { signInWithIdentifier } from '@/lib/auth';
 import {
@@ -123,11 +124,9 @@ export default function LoginScreen() {
               value={identifier}
               onChangeText={setIdentifier}
             />
-            <TextInput
-              style={styles.input}
+            <PasswordInput
+              inputStyle={styles.input}
               placeholder="Contraseña"
-              placeholderTextColor={Colors.textMuted}
-              secureTextEntry
               value={password}
               onChangeText={setPassword}
             />

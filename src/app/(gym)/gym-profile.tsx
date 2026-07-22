@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 
+import { DeleteAccountButton } from '@/components/delete-account-button';
 import { Colors } from '@/constants/theme';
 import { useSession } from '@/hooks/use-session';
 import { supabase } from '@/lib/supabase';
@@ -275,6 +276,10 @@ export default function GymProfileScreen() {
         <Pressable style={styles.signOutButton} onPress={handleSignOut}>
           <Text style={styles.signOutButtonText}>Cerrar sesión</Text>
         </Pressable>
+
+        <View style={styles.divider} />
+
+        <DeleteAccountButton />
       </ScrollView>
     </KeyboardAvoidingView>
   );

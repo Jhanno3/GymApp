@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PasswordInput } from '@/components/password-input';
 import { Colors } from '@/constants/theme';
 import { registerWithEmail } from '@/lib/auth';
 
@@ -178,19 +179,15 @@ export default function RegisterScreen() {
               value={email}
               onChangeText={setEmail}
             />
-            <TextInput
-              style={styles.input}
+            <PasswordInput
+              inputStyle={styles.input}
               placeholder="Contraseña"
-              placeholderTextColor={Colors.textMuted}
-              secureTextEntry
               value={password}
               onChangeText={setPassword}
             />
-            <TextInput
-              style={styles.input}
+            <PasswordInput
+              inputStyle={styles.input}
               placeholder="Repetir contraseña"
-              placeholderTextColor={Colors.textMuted}
-              secureTextEntry
               value={confirmPassword}
               onChangeText={setConfirmPassword}
             />
