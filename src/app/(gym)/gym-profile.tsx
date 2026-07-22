@@ -16,12 +16,18 @@ import { Colors } from '@/constants/theme';
 import { useSession } from '@/hooks/use-session';
 import { supabase } from '@/lib/supabase';
 
-export default function ProfileScreen() {
+type Gym = {
+  Nombre: string;
+  direccion: string | null;
+};
+
+export default function GymProfileScreen() {
   const router = useRouter();
   const { session } = useSession();
 
   const [fullName, setFullName] = useState('');
   const [dni, setDni] = useState('');
+  const [gym, setGym] = useState<Gym | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +56,16 @@ export default function ProfileScreen() {
     if (!loadError && data) {
       setFullName(data.full_name ?? '');
       setDni(data.dni ?? '');
+
+      const gimnasioDni = data.dni ? Number(data.dni) : null;
+      if (gimnasioDni && !Number.isNaN(gimnasioDni)) {
+        const { data: gymData } = await supabase
+          .from('Gimnasio')
+          .select('Nombre, direccion')
+          .eq('DNI', gimnasioDni)
+          .single();
+        setGym((gymData as Gym) ?? null);
+      }
     }
     setIsLoading(false);
   }
@@ -132,7 +148,7 @@ export default function ProfileScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Perfil</Text>
-        <Text style={styles.subtitle}>Tus datos personales</Text>
+        <Text style={styles.subtitle}>Tus datos y los de tu gimnasio</Text>
 
         <View style={styles.form}>
           <View style={styles.field}>
@@ -179,6 +195,38 @@ export default function ProfileScreen() {
             <Text style={styles.buttonText}>Guardar cambios</Text>
           )}
         </Pressable>
+
+        <View style={styles.divider} />
+
+        <View style={styles.form}>
+          <Text style={styles.sectionTitle}>Tu gimnasio</Text>
+
+          {gym ? (
+            <>
+              <View style={styles.field}>
+                <Text style={styles.label}>Nombre</Text>
+                <TextInput
+                  style={[styles.input, styles.inputReadOnly]}
+                  value={gym.Nombre}
+                  editable={false}
+                />
+              </View>
+
+              {gym.direccion && (
+                <View style={styles.field}>
+                  <Text style={styles.label}>Dirección</Text>
+                  <TextInput
+                    style={[styles.input, styles.inputReadOnly]}
+                    value={gym.direccion}
+                    editable={false}
+                  />
+                </View>
+              )}
+            </>
+          ) : (
+            <Text style={styles.emptyText}>Todavía no tenés un gimnasio asignado.</Text>
+          )}
+        </View>
 
         <View style={styles.divider} />
 
@@ -289,6 +337,10 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   inputReadOnly: {
+    color: Colors.textMuted,
+  },
+  emptyText: {
+    fontSize: 14,
     color: Colors.textMuted,
   },
   error: {

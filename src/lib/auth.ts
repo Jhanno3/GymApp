@@ -24,13 +24,28 @@ export async function signInWithIdentifier(identifier: string, password: string)
 }
 
 type RegisterInput = {
-  fullName: string;
+  nombre: string;
+  apellido: string;
+  telefono?: string;
   dni: string;
   email: string;
   password: string;
+  role: 'client' | 'admin';
+  gymName?: string;
+  gymAddress?: string;
 };
 
-export async function registerWithEmail({ fullName, dni, email, password }: RegisterInput) {
+export async function registerWithEmail({
+  nombre,
+  apellido,
+  telefono,
+  dni,
+  email,
+  password,
+  role,
+  gymName,
+  gymAddress,
+}: RegisterInput) {
   const { data: dniTaken, error: dniCheckError } = await supabase.rpc('dni_exists', {
     check_dni: dni.trim(),
   });
@@ -48,8 +63,15 @@ export async function registerWithEmail({ fullName, dni, email, password }: Regi
     password,
     options: {
       data: {
-        full_name: fullName.trim(),
+        nombre: nombre.trim(),
+        apellido: apellido.trim(),
+        telefono: telefono?.trim() || null,
         dni: dni.trim(),
+        role,
+        ...(role === 'admin' && {
+          gym_name: gymName?.trim(),
+          gym_address: gymAddress?.trim(),
+        }),
       },
     },
   });

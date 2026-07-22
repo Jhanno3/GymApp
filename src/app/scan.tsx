@@ -2,15 +2,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/theme';
+import { supabase } from '@/lib/supabase';
 
 export default function ScanScreen() {
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
+  const [checkInError, setCheckInError] = useState<string | null>(null);
 
   function handleClose() {
     if (router.canGoBack()) {
@@ -20,14 +23,31 @@ export default function ScanScreen() {
     }
   }
 
-  function handleBarcodeScanned({ data }: { data: string }) {
+  function handleRetry() {
+    setCheckInError(null);
+    setScanned(false);
+  }
+
+  async function handleBarcodeScanned({ data }: { data: string }) {
     if (scanned) return;
     setScanned(true);
+    setIsCheckingIn(true);
+    setCheckInError(null);
 
-    Alert.alert('QR escaneado', data, [
-      { text: 'Escanear de nuevo', onPress: () => setScanned(false) },
-      { text: 'Cerrar', onPress: handleClose },
-    ]);
+    const { data: gymName, error } = await supabase.rpc('check_in', {
+      p_qr_code_value: data,
+    });
+    setIsCheckingIn(false);
+
+    if (error) {
+      setCheckInError(error.message);
+      return;
+    }
+
+    if (router.canDismiss()) {
+      router.dismissAll();
+    }
+    router.replace({ pathname: '/home', params: { checkinGym: gymName ?? '' } });
   }
 
   if (!permission) {
@@ -66,7 +86,18 @@ export default function ScanScreen() {
 
         <View style={styles.frame} />
 
-        <Text style={styles.hint}>Apuntá al QR del gimnasio para hacer check-in</Text>
+        {isCheckingIn ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : checkInError ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{checkInError}</Text>
+            <Pressable style={styles.retryButton} onPress={handleRetry}>
+              <Text style={styles.retryButtonText}>Escanear de nuevo</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Text style={styles.hint}>Apuntá al QR del gimnasio para hacer check-in</Text>
+        )}
       </SafeAreaView>
     </View>
   );
@@ -108,6 +139,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     paddingHorizontal: 32,
+  },
+  errorBox: {
+    alignItems: 'center',
+    gap: 16,
+    paddingHorizontal: 32,
+  },
+  errorText: {
+    color: '#F87171',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  retryButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   permissionContainer: {
     flex: 1,
