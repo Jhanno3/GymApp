@@ -34,7 +34,9 @@ export default function GymCheckinsScreen() {
               <Text style={styles.time}>{formatTime(checkin.checkedInAt)}</Text>
               <View style={styles.clientInfo}>
                 <Text style={styles.clientName}>
-                  {checkin.cliente ? `${checkin.cliente.Nombre} ${checkin.cliente.Apellido}` : '-'}
+                  {checkin.cliente
+                    ? [checkin.cliente.Nombre, checkin.cliente.Apellido].filter(Boolean).join(' ')
+                    : '-'}
                 </Text>
                 {checkin.cliente && (
                   <Text style={styles.clientDetail}>DNI {checkin.cliente.DNI}</Text>
@@ -102,6 +104,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: Colors.text,
+    textTransform: 'capitalize',
   },
   clientDetail: {
     fontSize: 13,

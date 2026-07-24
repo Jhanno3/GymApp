@@ -20,7 +20,7 @@ export function useClientRoutines(userId: string | undefined) {
     const { data } = await supabase
       .from('Cliente')
       .select(
-        'Cliente_rutina(dias_semana, Rutina(nombre, Rutina_ejercicio(grupo_muscular, descripcion, orden, Ejercicio(nombre, video_url))))'
+        'Cliente_rutina(dias_semana, Rutina(nombre, Rutina_ejercicio(id, grupo_muscular, descripcion, orden, Ejercicio(nombre, video_url))))'
       )
       .eq('user_id', userId)
       .single();

@@ -13,16 +13,11 @@ import {
   View,
 } from 'react-native';
 
-import { Colors, SubscriptionStatusColors } from '@/constants/theme';
-import { Client, SubscriptionStatus, useGymClients } from '@/hooks/use-gym-clients';
+import { StatusLed } from '@/components/status-led';
+import { Colors, SubscriptionStatusLabels } from '@/constants/theme';
+import { Client, useGymClients } from '@/hooks/use-gym-clients';
 import { useSession } from '@/hooks/use-session';
 import { supabase } from '@/lib/supabase';
-
-const STATUS_LABELS: Record<SubscriptionStatus, string> = {
-  active: 'Activa',
-  expiring: 'Por vencer',
-  none: 'Sin membresía',
-};
 
 function formatDate(value: string | null) {
   if (!value) return '-';
@@ -171,12 +166,7 @@ export default function GymClientsScreen() {
                 <Text style={[styles.cell, styles.dniCell]}>{client.DNI}</Text>
                 <Text style={[styles.cell, styles.phoneCell]}>{client.Telefono ?? '-'}</Text>
                 <View style={styles.statusCell}>
-                  <View
-                    style={[
-                      styles.statusLed,
-                      { backgroundColor: SubscriptionStatusColors[client.status] },
-                    ]}
-                  />
+                  <StatusLed status={client.status} />
                 </View>
               </Pressable>
             ))}
@@ -193,12 +183,7 @@ export default function GymClientsScreen() {
                   <Text style={styles.modalTitle}>
                     {selectedClient.Nombre} {selectedClient.Apellido}
                   </Text>
-                  <View
-                    style={[
-                      styles.statusLed,
-                      { backgroundColor: SubscriptionStatusColors[selectedClient.status] },
-                    ]}
-                  />
+                  <StatusLed status={selectedClient.status} />
                 </View>
 
                 <View style={styles.detailList}>
@@ -216,7 +201,9 @@ export default function GymClientsScreen() {
                   </View>
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Membresía</Text>
-                    <Text style={styles.detailValue}>{STATUS_LABELS[selectedClient.status]}</Text>
+                    <Text style={styles.detailValue}>
+                      {SubscriptionStatusLabels[selectedClient.status]}
+                    </Text>
                   </View>
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Inicio</Text>
@@ -363,23 +350,19 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   nameCell: {
-    flex: 2.2,
+    flex: 1.8,
     paddingRight: 8,
+    textTransform: 'capitalize',
   },
   dniCell: {
-    flex: 1.3,
+    flex: 1.1,
   },
   phoneCell: {
-    flex: 1.4,
+    flex: 1.2,
   },
   statusCell: {
-    flex: 0.8,
+    flex: 1.4,
     alignItems: 'center',
-  },
-  statusLed: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
   },
   modalOverlay: {
     flex: 1,
@@ -408,6 +391,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: Colors.text,
+    textTransform: 'capitalize',
   },
   detailList: {
     gap: 10,

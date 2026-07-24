@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -5,7 +6,9 @@ import { ExerciseGroupList } from '@/components/exercise-group-list';
 import { YouTubePlayerModal } from '@/components/youtube-player-modal';
 import { Colors } from '@/constants/theme';
 import { useClientRoutines } from '@/hooks/use-client-routines';
+import { useExerciseCompletions } from '@/hooks/use-exercise-completions';
 import { useSession } from '@/hooks/use-session';
+import { countExercisesForWeekday, getCurrentWeekDates, toDateKey } from '@/lib/weekly-progress';
 
 type ClassSession = {
   id: string;
@@ -19,27 +22,20 @@ type ClassSession = {
 const CLIENT_CLASSES: ClassSession[] = [];
 
 const WEEKDAY_LABELS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
-const DAYS_TO_SHOW = 7;
-
-function toDateKey(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
 
 export default function ClassesScreen() {
   const { session } = useSession();
   const { routines } = useClientRoutines(session?.user.id);
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
 
-  const days = useMemo(() => {
-    const today = new Date();
-    return Array.from({ length: DAYS_TO_SHOW }, (_, i) => {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      return date;
-    });
-  }, []);
+  // Semana calendario (domingo a sábado), igual que la barra de progreso de Inicio.
+  const days = useMemo(() => getCurrentWeekDates(), []);
 
-  const [selectedKey, setSelectedKey] = useState(() => toDateKey(days[0]));
+  const rangeStart = toDateKey(days[0]);
+  const rangeEnd = toDateKey(days[days.length - 1]);
+  const { completions, toggle } = useExerciseCompletions(session?.user.id, rangeStart, rangeEnd);
+
+  const [selectedKey, setSelectedKey] = useState(() => toDateKey(new Date()));
   const selectedDate = days.find((date) => toDateKey(date) === selectedKey) ?? days[0];
   const selectedWeekday = selectedDate.getDay();
 
@@ -47,6 +43,32 @@ export default function ClassesScreen() {
   const routinesForSelectedDay = routines.filter((routine) =>
     routine.diasSemana.includes(selectedWeekday)
   );
+
+  const completedIdsForSelectedDay = useMemo(
+    () =>
+      new Set(
+        completions.filter((c) => c.fecha === selectedKey).map((c) => c.rutinaEjercicioId)
+      ),
+    [completions, selectedKey]
+  );
+
+  const totalExercisesSelectedDay = countExercisesForWeekday(routines, selectedWeekday);
+  const isSelectedDayDone =
+    totalExercisesSelectedDay > 0 && completedIdsForSelectedDay.size >= totalExercisesSelectedDay;
+
+  function isDayDone(date: Date) {
+    const key = toDateKey(date);
+    const weekday = date.getDay();
+    const total = countExercisesForWeekday(routines, weekday);
+    if (total === 0) return false;
+    const done = completions.filter((c) => c.fecha === key).length;
+    return done >= total;
+  }
+
+  function handleToggleExercise(exerciseId: string) {
+    const isCompleted = completedIdsForSelectedDay.has(exerciseId);
+    toggle(exerciseId, selectedKey, isCompleted);
+  }
 
   return (
     <View style={styles.container}>
@@ -56,6 +78,7 @@ export default function ClassesScreen() {
         {days.map((date) => {
           const key = toDateKey(date);
           const isSelected = key === selectedKey;
+          const done = isDayDone(date);
           return (
             <Pressable
               key={key}
@@ -67,6 +90,11 @@ export default function ClassesScreen() {
               <Text style={[styles.dayNumber, isSelected && styles.dayNumberSelected]}>
                 {date.getDate()}
               </Text>
+              {done && (
+                <View style={styles.dayDoneBadge}>
+                  <Ionicons name="checkmark" size={10} color="#FFFFFF" />
+                </View>
+              )}
             </Pressable>
           );
         })}
@@ -79,10 +107,22 @@ export default function ClassesScreen() {
         ListHeaderComponent={
           routinesForSelectedDay.length > 0 ? (
             <View style={styles.routinesForDay}>
+              {isSelectedDayDone && (
+                <View style={styles.dayDoneBanner}>
+                  <Ionicons name="checkmark-circle" size={18} color="#4ADE80" />
+                  <Text style={styles.dayDoneBannerText}>¡Día completado!</Text>
+                </View>
+              )}
+
               {routinesForSelectedDay.map((routine, index) => (
                 <View key={`${routine.nombre}-${index}`} style={styles.routineSection}>
                   <Text style={styles.routineTitle}>{routine.nombre}</Text>
-                  <ExerciseGroupList groups={routine.groups} onPressVideo={setActiveVideoId} />
+                  <ExerciseGroupList
+                    groups={routine.groups}
+                    onPressVideo={setActiveVideoId}
+                    completedIds={completedIdsForSelectedDay}
+                    onToggleExercise={handleToggleExercise}
+                  />
                 </View>
               ))}
             </View>
@@ -159,12 +199,42 @@ const styles = StyleSheet.create({
   dayNumberSelected: {
     color: '#FFFFFF',
   },
+  dayDoneBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#4ADE80',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.background,
+  },
   listContent: {
     flexGrow: 1,
     gap: 12,
   },
   routinesForDay: {
     marginBottom: 8,
+  },
+  dayDoneBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: '#4ADE80',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+  },
+  dayDoneBannerText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
   },
   routineSection: {
     marginBottom: 20,

@@ -8,7 +8,7 @@ export type GymCheckIn = {
   cliente: {
     DNI: number;
     Nombre: string;
-    Apellido: string;
+    Apellido: string | null;
   } | null;
 };
 
@@ -54,7 +54,7 @@ export function useGymCheckins(userId: string | undefined) {
     type Row = {
       id: string;
       checked_in_at: string;
-      Cliente: { DNI: number; Nombre: string; Apellido: string } | null;
+      Cliente: { DNI: number; Nombre: string; Apellido: string | null } | null;
     };
 
     setCheckins(

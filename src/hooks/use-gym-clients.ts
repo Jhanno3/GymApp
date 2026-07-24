@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { getSubscriptionStatus, SubscriptionStatus } from '@/lib/subscription-status';
 import { supabase } from '@/lib/supabase';
+
+export type { SubscriptionStatus };
 
 export type Gym = {
   DNI: number;
@@ -8,8 +11,6 @@ export type Gym = {
   direccion: string | null;
   qr_code_value: string;
 };
-
-export type SubscriptionStatus = 'active' | 'expiring' | 'none';
 
 export type Client = {
   DNI: number;
@@ -21,19 +22,6 @@ export type Client = {
   fechaFin: string | null;
   status: SubscriptionStatus;
 };
-
-export function getSubscriptionStatus(fechaFin: string | null | undefined): SubscriptionStatus {
-  if (!fechaFin) return 'none';
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const end = new Date(`${fechaFin}T00:00:00`);
-
-  const diffDays = Math.round((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays < 0) return 'none';
-  if (diffDays <= 7) return 'expiring';
-  return 'active';
-}
 
 export function useGymClients(userId: string | undefined) {
   const [gym, setGym] = useState<Gym | null>(null);

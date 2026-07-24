@@ -396,6 +396,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.text,
     textAlign: 'center',
+    textTransform: 'capitalize',
   },
   centered: {
     flex: 1,
