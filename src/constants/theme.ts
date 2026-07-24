@@ -12,3 +12,9 @@ export const SubscriptionStatusColors = {
   expiring: '#FBBF24',
   none: '#52525B',
 };
+
+export const SubscriptionStatusLabels = {
+  active: 'Activa',
+  expiring: 'Por vencer',
+  none: 'Sin membresía',
+};

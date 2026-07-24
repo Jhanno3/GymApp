@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -15,7 +16,8 @@ import {
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
-import { Colors, SubscriptionStatusColors } from '@/constants/theme';
+import { StatusLed } from '@/components/status-led';
+import { Colors } from '@/constants/theme';
 import { useGymClients } from '@/hooks/use-gym-clients';
 import { useSession } from '@/hooks/use-session';
 import { supabase } from '@/lib/supabase';
@@ -129,8 +131,9 @@ export default function GymDashboardScreen() {
         {gym.direccion && <Text style={styles.subtitle}>{gym.direccion}</Text>}
       </View>
 
-      <Pressable style={styles.secondaryButton} onPress={() => setIsQrVisible(true)}>
-        <Text style={styles.secondaryButtonText}>Mostrar código QR</Text>
+      <Pressable style={styles.qrButton} onPress={() => setIsQrVisible(true)}>
+        <Ionicons name="qr-code-outline" size={20} color="#FFFFFF" />
+        <Text style={styles.qrButtonText}>Mostrar código QR</Text>
       </Pressable>
 
       <Modal visible={isQrVisible} animationType="fade" transparent>
@@ -234,12 +237,7 @@ export default function GymDashboardScreen() {
                     )}
                   </View>
 
-                  <View
-                    style={[
-                      styles.statusLed,
-                      { backgroundColor: SubscriptionStatusColors[client.status] },
-                    ]}
-                  />
+                  <StatusLed status={client.status} />
                 </View>
               ))}
             </View>
@@ -278,19 +276,20 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginTop: 2,
   },
-  secondaryButton: {
-    width: '100%',
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 10,
-    paddingVertical: 12,
+  qrButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    width: '100%',
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    paddingVertical: 14,
   },
-  secondaryButtonText: {
-    fontSize: 15,
+  qrButtonText: {
+    fontSize: 16,
     fontWeight: '600',
-    color: Colors.text,
+    color: '#FFFFFF',
   },
   modalOverlay: {
     flex: 1,
@@ -399,15 +398,11 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
-  statusLed: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
   clientName: {
     fontSize: 15,
     fontWeight: '600',
     color: Colors.text,
+    textTransform: 'capitalize',
   },
   clientDetail: {
     fontSize: 13,

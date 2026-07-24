@@ -5,6 +5,7 @@ import { Colors } from '@/constants/theme';
 import { getYouTubeId, getYouTubeThumbnail } from '@/lib/youtube';
 
 export type RoutineExercise = {
+  id: string;
   grupo_muscular: string | null;
   descripcion: string | null;
   orden: number | null;
@@ -36,57 +37,66 @@ export function groupExercises(exercises: RoutineExercise[]): MuscleGroup[] {
 export function ExerciseGroupList({
   groups,
   onPressVideo,
+  completedIds,
+  onToggleExercise,
 }: {
   groups: MuscleGroup[];
   onPressVideo: (videoId: string) => void;
+  completedIds?: Set<string>;
+  onToggleExercise?: (exerciseId: string) => void;
 }) {
-  if (groups.length === 0) {
+  const exercises = groups.flatMap((group) => group.exercises);
+
+  if (exercises.length === 0) {
     return <Text style={styles.emptyText}>Todavía no tiene ejercicios cargados.</Text>;
   }
 
   return (
-    <>
-      {groups.map((group) => (
-        <View key={group.name} style={styles.group}>
-          <Text style={styles.groupTitle}>{group.name}</Text>
+    <View style={styles.card}>
+      {exercises.map((exercise, index) => {
+        const videoId = exercise.Ejercicio?.video_url
+          ? getYouTubeId(exercise.Ejercicio.video_url)
+          : null;
+        const thumbnail = getYouTubeThumbnail(exercise.Ejercicio?.video_url ?? null);
+        const isDone = completedIds?.has(exercise.id) ?? false;
 
-          <View style={styles.card}>
-            {group.exercises.map((exercise, index) => {
-              const videoId = exercise.Ejercicio?.video_url
-                ? getYouTubeId(exercise.Ejercicio.video_url)
-                : null;
-              const thumbnail = getYouTubeThumbnail(exercise.Ejercicio?.video_url ?? null);
+        return (
+          <View
+            key={exercise.id || index}
+            style={[styles.exerciseRow, index > 0 && styles.exerciseRowDivider]}>
+            {onToggleExercise && (
+              <Pressable
+                style={[styles.checkCircle, isDone && styles.checkCircleDone]}
+                onPress={() => onToggleExercise(exercise.id)}>
+                {isDone && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+              </Pressable>
+            )}
 
-              return (
-                <View
-                  key={`${group.name}-${index}`}
-                  style={[styles.exerciseRow, index > 0 && styles.exerciseRowDivider]}>
-                  <View style={styles.exerciseInfo}>
-                    <Text style={styles.exerciseName}>{exercise.Ejercicio?.nombre}</Text>
-                    {exercise.descripcion && (
-                      <Text style={styles.exerciseDescription}>{exercise.descripcion}</Text>
-                    )}
-                  </View>
+            <View style={styles.exerciseInfo}>
+              <Text style={[styles.exerciseName, isDone && styles.exerciseNameDone]}>
+                {exercise.Ejercicio?.nombre}
+              </Text>
+              {exercise.descripcion && (
+                <Text style={styles.exerciseDescription}>{exercise.descripcion}</Text>
+              )}
+            </View>
 
-                  {videoId && (
-                    <Pressable style={styles.videoPreview} onPress={() => onPressVideo(videoId)}>
-                      {thumbnail ? (
-                        <Image source={{ uri: thumbnail }} style={styles.videoThumbnail} />
-                      ) : (
-                        <View style={styles.videoPlaceholder} />
-                      )}
-                      <View style={styles.playOverlay}>
-                        <Ionicons name="play" size={16} color="#FFFFFF" />
-                      </View>
-                    </Pressable>
-                  )}
+            {videoId && (
+              <Pressable style={styles.videoPreview} onPress={() => onPressVideo(videoId)}>
+                {thumbnail ? (
+                  <Image source={{ uri: thumbnail }} style={styles.videoThumbnail} />
+                ) : (
+                  <View style={styles.videoPlaceholder} />
+                )}
+                <View style={styles.playOverlay}>
+                  <Ionicons name="play" size={16} color="#FFFFFF" />
                 </View>
-              );
-            })}
+              </Pressable>
+            )}
           </View>
-        </View>
-      ))}
-    </>
+        );
+      })}
+    </View>
   );
 }
 
@@ -96,15 +106,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: Colors.textMuted,
-  },
-  group: {
-    gap: 10,
-    marginBottom: 20,
-  },
-  groupTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text,
   },
   card: {
     backgroundColor: Colors.surface,
@@ -123,6 +124,19 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
+  checkCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkCircleDone: {
+    backgroundColor: '#4ADE80',
+    borderColor: '#4ADE80',
+  },
   exerciseInfo: {
     flex: 1,
     gap: 2,
@@ -132,8 +146,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.text,
   },
+  exerciseNameDone: {
+    color: Colors.textMuted,
+    textDecorationLine: 'line-through',
+  },
   exerciseDescription: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.textMuted,
   },
   videoPreview: {
